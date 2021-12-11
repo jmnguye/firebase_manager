@@ -17,29 +17,31 @@ status = 'started'
 tag_docker = '0.0.1'
 
 # print(ref.get())
-
 my_value = {
     'commit': '1a2c31',
     'release_chart': chart,
     'status': status,
-    'tag_docker': tag_docker
+    'tag_docker': tag_docker,
+    'timestamp': {'.sv': 'timestamp'}
 }
 
 my_value2 = {
     'commit': '1a2c32',
     'release_chart': chart,
     'status': status,
-    'tag_docker': tag_docker
+    'tag_docker': tag_docker,
+    'timestamp': {'.sv': 'timestamp'}
 }
 
 my_value3 = {
     'commit': '1a2c33',
     'release_chart': chart,
     'status': status,
-    'tag_docker': tag_docker
+    'tag_docker': tag_docker,
+    'timestamp': {'.sv': 'timestamp'}
 }
 
-ref.push(my_value)
+ref.set(my_value)
 ref.push(my_value2)
 ref.push(my_value3)
 
