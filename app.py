@@ -1,9 +1,11 @@
 import firebase_admin
+import os
 from firebase_admin import credentials
 from firebase_admin import db
 
+app_path = os.getcwd()
 cred = credentials.Certificate(
-    "/home/mxp/DEVELOP/Python/firebase/jenkins-web-cv-firebase-adminsdk-ay7vj-5afd2a8970.json")
+    f"{app_path}/jenkins-web-cv-firebase-adminsdk-ay7vj-5afd2a8970.json")
 firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://jenkins-web-cv-default-rtdb.europe-west1.firebasedatabase.app/'
 })
