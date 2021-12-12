@@ -1,10 +1,14 @@
 import firebase_admin
 import os
 import json
+import argparse
 from firebase_admin import credentials
 from firebase_admin import db
 
 DB_SIZE = 10
+
+parser = argparse.ArgumentParser(description='CRUD Manage data on firebase')
+parser.add_argument('--action')
 
 app_path = os.getcwd()
 cred = credentials.Certificate(
@@ -13,13 +17,11 @@ firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://jenkins-web-cv-default-rtdb.europe-west1.firebasedatabase.app/'
 })
 
-ref = db.reference('/commits')
 
 chart = '0.0.1'
 status = 'started'
 tag_docker = '0.0.1'
 
-# print(ref.get())
 my_value = {
     'commit': '1a2c31',
     'release_chart': chart,
@@ -48,20 +50,18 @@ my_value3 = {
 # ref.push(my_value2)
 #ref.push(my_value3)
 
-#print(json.dumps(ref.get(), indent=4, sort_keys=True))
-
+def get_ref():
+    return db.reference('/commits')
 
 def update():
     pass
 
-
-def add():
-    pass
-
+def add(value):
+    ref = get_ref()
+    ref.push(value)
 
 def delete():
     pass
-
 
 '''
 i want to limit entries up to let's say 2 for the moment
@@ -79,15 +79,12 @@ def get_nodes_sorted():
     return json.loads(json_sorted) # build python objects from json output sorted
 #print(type(nodes_sorted))
 #print(db.reference(f'/commits/{list(nodes_sorted.keys())[0]}').get())
-def restric_db_size(DB_SIZE):
+
+def restrict_db_size():
     while len(get_ref_shallow()) > DB_SIZE:
         top_node = list(get_nodes_sorted().keys())[0]
         node = db.reference(f'/commits/{top_node}')
         print(node.get())
         node.delete()
-    
 
-#for node in nodes_sorted:
-#        node_ref = db.reference(f'/commits/{node}')
-#        print(node_ref.get())
-
+restrict_db_size()
