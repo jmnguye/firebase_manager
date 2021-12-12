@@ -67,17 +67,21 @@ in case there are more, remove the oldest one
 data are filled like a queue
 get the size of ref
 '''
-shallowed = ref.get(shallow=True) # get only keys
-json_sorted = json.dumps(shallowed, sort_keys=True) # this trick help me sort key
-nodes_sorted = json.loads(json_sorted) # build python objects from json output sorted
+def get_ref_shallow():
+    ref = db.reference('/commits')
+    return ref.get(shallow=True)
+
+def get_nodes_sorted():
+    shallowed = get_ref_shallow() # get only keys
+    json_sorted = json.dumps(shallowed, sort_keys=True) # this trick help me sort key
+    return json.loads(json_sorted) # build python objects from json output sorted
 #print(type(nodes_sorted))
 #print(db.reference(f'/commits/{list(nodes_sorted.keys())[0]}').get())
-while len(shallowed) > 10:
-    top_node = list(nodes_sorted.keys())[0]
+while len(get_ref_shallow()) > 10:
+    top_node = list(get_nodes_sorted().keys())[0]
     node = db.reference(f'/commits/{top_node}')
     print(node.get())
     node.delete()
-    shallowed = ref.get(shallow=True)
     
 
 #for node in nodes_sorted:
@@ -85,4 +89,3 @@ while len(shallowed) > 10:
 #        print(node_ref.get())
 
 
-print(len(shallowed))
