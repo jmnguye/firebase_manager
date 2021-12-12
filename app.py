@@ -4,6 +4,8 @@ import json
 from firebase_admin import credentials
 from firebase_admin import db
 
+DB_SIZE = 10
+
 app_path = os.getcwd()
 cred = credentials.Certificate(
     f"{app_path}/jenkins-web-cv-firebase-adminsdk-ay7vj-5afd2a8970.json")
@@ -77,15 +79,15 @@ def get_nodes_sorted():
     return json.loads(json_sorted) # build python objects from json output sorted
 #print(type(nodes_sorted))
 #print(db.reference(f'/commits/{list(nodes_sorted.keys())[0]}').get())
-while len(get_ref_shallow()) > 10:
-    top_node = list(get_nodes_sorted().keys())[0]
-    node = db.reference(f'/commits/{top_node}')
-    print(node.get())
-    node.delete()
+def restric_db_size(DB_SIZE):
+    while len(get_ref_shallow()) > DB_SIZE:
+        top_node = list(get_nodes_sorted().keys())[0]
+        node = db.reference(f'/commits/{top_node}')
+        print(node.get())
+        node.delete()
     
 
 #for node in nodes_sorted:
 #        node_ref = db.reference(f'/commits/{node}')
 #        print(node_ref.get())
-
 
