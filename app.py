@@ -9,7 +9,8 @@ from firebase_admin.exceptions import FirebaseError
 
 DB_SIZE = 10
 
-parser = argparse.ArgumentParser(description='CRUD Manage data on firebase', usage='app.py [-h] [--post COMMIT] [--get COMMIT] [--delete COMMIT] [--patch COMMIT]')
+parser = argparse.ArgumentParser(description='CRUD Manage data on firebase',
+                                 usage='app.py [-h] [--post COMMIT] [--get COMMIT] [--delete COMMIT] [--patch COMMIT]')
 group_parser = parser.add_mutually_exclusive_group()
 group_parser.add_argument('--post', help='add commit entry')
 group_parser.add_argument('--get', help='retrieve data from commit')
@@ -77,6 +78,7 @@ my_value3 = {
 def get_ref_commits():
     return db.reference('/commits')
 
+
 def patch(value):
     pass
 
@@ -91,6 +93,7 @@ def post(commit):
         except ValueError as e:
             print(e)
 
+
 def get(commit):
     if check_commit(commit):
         for ref in ref_commits.get():
@@ -98,6 +101,7 @@ def get(commit):
             ref_commit_get = ref_commit.get()
             if commit == ref_commit_get['commit']:
                 print(ref_commit_get)
+
 
 def delete():
     pass
@@ -114,6 +118,7 @@ get the size of ref
 def get_ref_commits_shallow():
     return ref_commits.get(shallow=True)
 
+
 def get_nodes_sorted():
     shallowed = get_ref_commits_shallow()  # get only keys
     # this trick help me sort key
@@ -129,6 +134,7 @@ def restrict_db_size():
 #        print(node.get())
         node.delete()
 
+
 def check_commit(commit):
     if re.fullmatch(r'[0-9a-z]{7}', commit):
         return True
@@ -136,8 +142,9 @@ def check_commit(commit):
         print('invalid commit syntax')
         return False
 
+
 ref_commits = get_ref_commits()
-#ref.push(empty_value)
+# ref.push(empty_value)
 
 if args.post:
     commit = args.post
