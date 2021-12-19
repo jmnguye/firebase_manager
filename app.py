@@ -30,14 +30,6 @@ chart = '0.0.1'
 status = 'started'
 tag_docker = '0.0.1'
 
-# class Entry():
-#    def __init__(self):
-#        self.commit = ''
-#        self.release_char = ''
-#        self.status = ''
-#        self.tag_docker = ''
-#        self.timestamp = ''
-
 empty_value = {
     'commit': '',
     'release_char': '',
@@ -70,54 +62,52 @@ my_value3 = {
     'timestamp': {'.sv': 'timestamp'}
 }
 
-# ref.push(my_value)
-# ref.push(my_value2)
-# ref.push(my_value3)
-
-
 def get_ref_commits():
     return db.reference('/commits')
-
 
 def patch(value):
     pass
 
-
-def post(commit):
-    if check_commit(commit):
-        try:
-            ref_commits.push({'commit': commit})
-            print(f'Commit {commit} successfully added')
-        except FirebaseError as e:
-            print(e)
-        except ValueError as e:
-            print(e)
-
-
-def get(commit):
+def find_ref_commit_in_db(commit):
     if check_commit(commit):
         for ref in ref_commits.get():
             ref_commit = db.reference(f'/commits/{ref}')
             ref_commit_get = ref_commit.get()
             if commit == ref_commit_get['commit']:
-                print(ref_commit_get)
+                return ref_commit
+        return None
 
+def post(commit):
+    ref_commit = find_ref_commit_in_db(commit)
+    if check_commit(commit):
+        if ref_commit is None:
+            try:
+                ref_commits.push({'commit': commit})
+                print(f'Commit {commit} successfully added')
+            except FirebaseError as e:
+                print(e)
+            except ValueError as e:
+                print(e)
+        else:
+            print(f'Nothing done, commit {commit} already exist in db')
 
-def delete():
-    pass
+def get(commit):
+    ref_commit = find_ref_commit_in_db(commit)
+    if ref_commit:
+        print(ref_commit.get())
+    else:
+        print(f'{commit} not found')
 
-
-'''
-i want to limit entries up to let's say 2 for the moment
-in case there are more, remove the oldest one
-data are filled like a queue
-get the size of ref
-'''
-
+def delete(commit):
+    ref_commit = find_ref_commit_in_db(commit)
+    if ref_commit:
+        ref_commit.delete()
+        print(f'{commit} deleted')
+    else:
+        print(f'{commit} not found')
 
 def get_ref_commits_shallow():
     return ref_commits.get(shallow=True)
-
 
 def get_nodes_sorted():
     shallowed = get_ref_commits_shallow()  # get only keys
@@ -126,14 +116,12 @@ def get_nodes_sorted():
     # build python objects from json output sorted
     return json.loads(json_sorted)
 
-
 def restrict_db_size():
     while len(get_ref_commits_shallow()) > DB_SIZE:
         top_node = list(get_nodes_sorted().keys())[0]
         node = db.reference(f'/commits/{top_node}')
 #        print(node.get())
         node.delete()
-
 
 def check_commit(commit):
     if re.fullmatch(r'[0-9a-z]{7}', commit):
@@ -142,9 +130,7 @@ def check_commit(commit):
         print('invalid commit syntax')
         return False
 
-
 ref_commits = get_ref_commits()
-# ref.push(empty_value)
 
 if args.post:
     commit = args.post
@@ -155,7 +141,9 @@ elif args.get:
     get(commit)
 
 elif args.delete:
-    pass
+    commit = args.delete
+    delete(commit)
+
 elif args.patch:
     pass
 
