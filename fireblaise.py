@@ -10,7 +10,7 @@ from firebase_admin.exceptions import FirebaseError
 
 DB_SIZE = 100
 
-parser = argparse.ArgumentParser(description='CRUD Manage data on firebase', usage='app.py [-h] [--post COMMIT] [--get COMMIT] [--delete COMMIT] [--patch COMMIT VALUE:STRING] [--put COMMIT VALUE:STRING]')
+parser = argparse.ArgumentParser(description='CRUD Manage data on firebase', usage='fireblaise.py [-h] [--post COMMIT] [--get COMMIT] [--delete COMMIT] [--patch COMMIT VALUE:STRING] [--put COMMIT VALUE:STRING]')
 group_parser = parser.add_mutually_exclusive_group()
 group_parser.add_argument('--post', help='add commit entry')
 group_parser.add_argument('--get', help='retrieve data from commit')
@@ -83,6 +83,7 @@ def post(commit):
         except ValueError as e:
             print(e)
     else:
+        raise CommitNotFound
 
 def get(commit):
     ref_commit = find_ref_commit_in_db(commit)
