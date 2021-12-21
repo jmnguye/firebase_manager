@@ -5,17 +5,18 @@ import argparse
 import re
 from firebase_admin import credentials
 from firebase_admin import db
+from firebase_admin import exceptions
 from firebase_admin.exceptions import FirebaseError
 
-DB_SIZE = 10
+DB_SIZE = 100
 
-parser = argparse.ArgumentParser(description='CRUD Manage data on firebase',
-                                 usage='app.py [-h] [--post COMMIT] [--get COMMIT] [--delete COMMIT] [--patch COMMIT]')
+parser = argparse.ArgumentParser(description='CRUD Manage data on firebase', usage='app.py [-h] [--post COMMIT] [--get COMMIT] [--delete COMMIT] [--patch COMMIT VALUE:STRING] [--put COMMIT VALUE:STRING]')
 group_parser = parser.add_mutually_exclusive_group()
 group_parser.add_argument('--post', help='add commit entry')
 group_parser.add_argument('--get', help='retrieve data from commit')
 group_parser.add_argument('--delete', help='delete data by commit')
-group_parser.add_argument('--patch', help='update commit entry')
+group_parser.add_argument('--patch', nargs='+', help='update commit entry with list argument')
+group_parser.add_argument('--put', nargs='+', help='replace commit entry with list argument')
 args = parser.parse_args()
 
 app_path = os.getcwd()
@@ -25,18 +26,15 @@ firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://jenkins-web-cv-default-rtdb.europe-west1.firebasedatabase.app/'
 })
 
+class CommitNotFound(Exception):
+    pass
+
+class CommitSyntaxError(Exception):
+    pass
 
 chart = '0.0.1'
 status = 'started'
 tag_docker = '0.0.1'
-
-empty_value = {
-    'commit': '',
-    'release_char': '',
-    'status': '',
-    'tag_docker': '',
-    'timestamp': ''
-}
 
 my_value = {
     'commit': '1a2c31',
@@ -46,27 +44,8 @@ my_value = {
     'timestamp': {'.sv': 'timestamp'}
 }
 
-my_value2 = {
-    'commit': '1a2c32',
-    'release_chart': chart,
-    'status': status,
-    'tag_docker': tag_docker,
-    'timestamp': {'.sv': 'timestamp'}
-}
-
-my_value3 = {
-    'commit': '1a2c33',
-    'release_chart': chart,
-    'status': status,
-    'tag_docker': tag_docker,
-    'timestamp': {'.sv': 'timestamp'}
-}
-
 def get_ref_commits():
     return db.reference('/commits')
-
-def patch(value):
-    pass
 
 def find_ref_commit_in_db(commit):
     if check_commit(commit):
@@ -77,34 +56,57 @@ def find_ref_commit_in_db(commit):
                 return ref_commit
         return None
 
+def patch(values):
+    try:
+        commit = values.pop(0)
+        ref_commit = find_ref_commit_in_db(commit)
+        if ref_commit is not None:
+            for value in values:
+                try:
+                    list_value = value.split(':')
+                    param = {list_value[0]: list_value[1]}
+                    ref_commit.update(param) 
+                except exceptions as e:
+                    print(e)
+        else:
+            raise CommitNotFound
+    except exceptions as e:
+        print(e)
+
 def post(commit):
     ref_commit = find_ref_commit_in_db(commit)
-    if check_commit(commit):
-        if ref_commit is None:
-            try:
-                ref_commits.push({'commit': commit})
-                print(f'Commit {commit} successfully added')
-            except FirebaseError as e:
-                print(e)
-            except ValueError as e:
-                print(e)
-        else:
-            print(f'Nothing done, commit {commit} already exist in db')
+    if ref_commit is None:
+        try:
+            ref_commits.push({'commit': commit})
+        except FirebaseError as e:
+            print(e)
+        except ValueError as e:
+            print(e)
+    else:
 
 def get(commit):
     ref_commit = find_ref_commit_in_db(commit)
-    if ref_commit:
+    if ref_commit is not None:
         print(ref_commit.get())
     else:
-        print(f'{commit} not found')
+        raise CommitNotFound
 
 def delete(commit):
     ref_commit = find_ref_commit_in_db(commit)
     if ref_commit:
         ref_commit.delete()
-        print(f'{commit} deleted')
     else:
-        print(f'{commit} not found')
+        raise CommitNotFound
+
+def put(values):
+    try:
+        commit = values.pop(0)
+        delete(commit)
+        post(commit)
+        values.insert(0,commit)
+        patch(values)
+    except exceptions as e:
+        print(e)
 
 def get_ref_commits_shallow():
     return ref_commits.get(shallow=True)
@@ -120,15 +122,13 @@ def restrict_db_size():
     while len(get_ref_commits_shallow()) > DB_SIZE:
         top_node = list(get_nodes_sorted().keys())[0]
         node = db.reference(f'/commits/{top_node}')
-#        print(node.get())
         node.delete()
 
 def check_commit(commit):
     if re.fullmatch(r'[0-9a-z]{7}', commit):
         return True
     else:
-        print('invalid commit syntax')
-        return False
+        raise CommitSyntaxError
 
 ref_commits = get_ref_commits()
 
@@ -145,6 +145,11 @@ elif args.delete:
     delete(commit)
 
 elif args.patch:
-    pass
+    values = args.patch
+    patch(values)
+
+elif args.put:
+    values = args.put
+    put(values)
 
 restrict_db_size()
